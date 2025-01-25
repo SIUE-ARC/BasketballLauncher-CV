@@ -1,0 +1,62 @@
+import numpy as np
+import scipy.optimize as opt
+import matplotlib.pyplot as plt
+
+#gravity
+g = 9.81
+
+#x coordinate of hoop, y coordinate of hoop, ideal angle of descent as we approach target
+x_f = float(input("Enter the horizontal distance of the target point (m): "))
+y_f = float(input("Enter the vertical distance of the target point (m): "))
+angle_descent = float(input("Enter the minimum descent angle at the target (degrees): "))
+
+def equations(vars):
+    v, theta = vars                                             #initial velocity and angle
+    theta_rads = np.radians(theta)                              #angle in radians
+    v_x = v * np.cos(theta_rads)                                #horizontal velocity
+    v_y = v * np.sin(theta_rads)                                #vertical velocity
+    t = x_f/v_x                                                 #time to reach horizontal desination
+    y_at_t = v_y * t - .5 * g * t**2                            #vertical position as a function of time
+    eq1 = y_at_t - y_f                                          #make sure we get there
+    v_y_at_t = v_y - g * t                                      #vertical component of velocity as a function of time
+    descent_angle = np.degrees(np.arctan2(abs(v_y_at_t),v_x))   #inverse tangent of vertical velocity over horizontal velocity, angle of travel
+    eq2 = descent_angle - angle_descent
+    return [eq1,eq2]
+
+initial_guess = [5,5]
+
+solution = opt.fsolve(equations, initial_guess)
+v_solution, theta_solution = solution
+
+# Calculate time to reach the point and descent angle
+theta_rad_solution = np.radians(theta_solution)
+v_x_solution = v_solution * np.cos(theta_rad_solution)
+v_y_initial_solution = v_solution * np.sin(theta_rad_solution)
+t_solution = x_f / v_x_solution
+v_y_at_target = v_y_initial_solution - g * t_solution
+descent_angle_solution = np.degrees(np.arctan2(abs(v_y_at_target), v_x_solution))
+
+# Print results
+print(f"Initial velocity needed: {v_solution:.2f} m/s")
+print(f"Launch angle needed: {theta_solution:.2f} degrees")
+print(f"Time to reach the point: {t_solution:.2f} s")
+print(f"Descent angle at target: {descent_angle_solution:.2f} degrees")
+
+# Generate trajectory for plotting
+t_values = np.linspace(0, t_solution, num=500)  # Time intervals
+x_values = v_x_solution * t_values  # Horizontal positions
+y_values = v_y_initial_solution * t_values - 0.5 * g * t_values**2  # Vertical positions
+
+# Plot trajectory
+plt.figure(figsize=(10, 6))
+plt.plot(x_values, y_values, label="Projectile Trajectory")
+plt.scatter([x_f], [y_f], color='red', label="Target Point", zorder=5)
+plt.axhline(0, color='black', linewidth=0.5)
+plt.title("Projectile Motion with Descent Angle Constraint")
+plt.xlabel("Horizontal Distance (m)")
+plt.ylabel("Vertical Distance (m)")
+plt.grid()
+plt.legend()
+plt.show()
+
+
